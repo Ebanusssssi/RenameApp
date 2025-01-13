@@ -1,9 +1,37 @@
-import shutil
 import streamlit as st
 import zipfile
 import os
 import tempfile
+import shutil
 
+# Функция для распаковки архива
+def unpack_archive(archive_path, extract_to):
+    """Распаковывает архив в указанную папку."""
+    with zipfile.ZipFile(archive_path, 'r') as zip_ref:
+        zip_ref.extractall(extract_to)
+    st.success(f"Архив распакован в {extract_to}")
+
+# Функция для переименования файлов в папке
+def rename_files_in_folder(folder_path):
+    """Переименовывает файлы в папке с учётом подкаталогов."""
+    for root, dirs, files in os.walk(folder_path):
+        # Фильтруем только изображения
+        images = [f for f in files if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff'))]
+        
+        for idx, image_name in enumerate(sorted(images), start=1):
+            # Составляем новый имя файла с сохранением расширения
+            file_extension = os.path.splitext(image_name)[1]
+            new_name = f"{idx}{file_extension}"
+            
+            # Путь к текущему файлу
+            old_file_path = os.path.join(root, image_name)
+            # Путь к новому файлу
+            new_file_path = os.path.join(root, new_name)
+            
+            # Переименовываем
+            os.rename(old_file_path, new_file_path)
+
+# Функция для обработки архива
 def process_zip(input_zip):
     try:
         # Создаем уникальную временную папку для каждого архива
