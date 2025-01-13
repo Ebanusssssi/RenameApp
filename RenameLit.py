@@ -1,36 +1,5 @@
-import streamlit as st
-import zipfile
-import os
-import tempfile
+import shutil
 
-# Функция для распаковки архива
-def unpack_archive(archive_path, extract_to):
-    """Распаковывает архив в указанную папку."""
-    with zipfile.ZipFile(archive_path, 'r') as zip_ref:
-        zip_ref.extractall(extract_to)
-    st.success(f"Архив распакован в {extract_to}")
-
-# Функция для переименования файлов в папке
-def rename_files_in_folder(folder_path):
-    """Переименовывает файлы в папке с учётом подкаталогов."""
-    for root, dirs, files in os.walk(folder_path):
-        # Фильтруем только изображения
-        images = [f for f in files if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff'))]
-        
-        for idx, image_name in enumerate(sorted(images), start=1):
-            # Составляем новый имя файла с сохранением расширения
-            file_extension = os.path.splitext(image_name)[1]
-            new_name = f"{idx}{file_extension}"
-            
-            # Путь к текущему файлу
-            old_file_path = os.path.join(root, image_name)
-            # Путь к новому файлу
-            new_file_path = os.path.join(root, new_name)
-            
-            # Переименовываем
-            os.rename(old_file_path, new_file_path)
-
-# Функция для обработки архива
 def process_zip(input_zip):
     try:
         # Создаем уникальную временную папку для каждого архива
@@ -64,6 +33,13 @@ def process_zip(input_zip):
 
     except Exception as e:
         return f"Ошибка при обработке архива: {e}"
+    finally:
+        # Очищаем временную папку после обработки
+        if os.path.exists(temp_folder):
+            shutil.rmtree(temp_folder)
+        # Удаляем временный архив после завершения
+        if os.path.exists("uploaded.zip"):
+            os.remove("uploaded.zip")
 
 # Основная часть программы для Streamlit
 def main():
@@ -80,18 +56,18 @@ def main():
         # Кнопка для запуска обработки
         if st.button('Запустить обработку'):
             st.write("Обработка началась...")
-            
+
             # Запуск функции для обработки архива
             result = process_zip("uploaded.zip")
             
             if isinstance(result, str) and result.endswith(".zip"):
-                st.success("Обработка завершена! Скачайте архив с переименованными изображениями:") 
+                st.success("Обработка завершена! Скачайте архив с переименованными изображениями:")
                 with open(result, 'rb') as f:
                     download_button = st.download_button('Скачать архив', f, file_name='renamed_images.zip')
                     
                     # Удаляем архив только после скачивания
                     if download_button:
-                        os.remove(result)  # Удаляем архив после того, как пользователь скачает его
+                        os.remove(result)
             else:
                 st.error(result)
 
