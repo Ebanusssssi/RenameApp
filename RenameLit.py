@@ -13,7 +13,6 @@ def unpack_archive(archive_path, extract_to):
 # Функция для переименования файлов в папке
 def rename_files_in_folder(folder_path):
     """Переименовывает файлы в папке с учётом подкаталогов."""
-    renamed_files = []  # Список для хранения переименованных файлов
     for root, dirs, files in os.walk(folder_path):
         # Фильтруем только изображения
         images = [f for f in files if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff'))]
@@ -30,9 +29,6 @@ def rename_files_in_folder(folder_path):
             
             # Переименовываем
             os.rename(old_file_path, new_file_path)
-            renamed_files.append(new_file_path)  # Добавляем в список переименованных файлов
-
-    return renamed_files
 
 # Функция для обработки архива
 def process_zip(input_zip):
@@ -44,20 +40,26 @@ def process_zip(input_zip):
         unpack_archive(input_zip, temp_folder)
 
         # Переименовываем файлы
-        renamed_files = []
         for root, dirs, files in os.walk(temp_folder):
             if any(f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff')) for f in files):
-                renamed_files.extend(rename_files_in_folder(root))
+                rename_files_in_folder(root)
 
         # Создаем новый архив для обработанных изображений
-        output_zip = os.path.join(temp_folder, 'Renamed.zip')
+        output_zip = os.path.join(temp_folder, 'processed_images.zip')
         
         with zipfile.ZipFile(output_zip, 'w') as zip_ref:
-            # Проходим по всем переименованным файлам и добавляем их в новый архив
-            for file_path in renamed_files:
-                arcname = os.path.relpath(file_path, temp_folder)  # Сохраняем структуру папок
-                zip_ref.write(file_path, arcname)
-
+            # Проходим по всем файлам и папкам в извлеченной структуре
+            for root, dirs, files in os.walk(temp_folder):
+                for filename in files:
+                    file_path = os.path.join(root, filename)
+                    
+                    # Пропускаем файлы и папки, начинающиеся с '__MACOSX' или '._'
+                    if filename.startswith('__MACOSX') or filename.startswith('._'):
+                        continue
+                    
+                    # Добавляем обработанный файл в архив
+                    zip_ref.write(file_path, os.path.relpath(file_path, temp_folder))
+        
         return output_zip
 
     except Exception as e:
@@ -85,7 +87,7 @@ def main():
             if isinstance(result, str) and result.endswith(".zip"):
                 st.success("Обработка завершена! Скачайте архив с переименованными изображениями:") 
                 with open(result, 'rb') as f:
-                    download_button = st.download_button('Скачать архив', f, file_name='Renamed.zip')
+                    download_button = st.download_button('Скачать архив', f, file_name='renamed_images.zip')
                     
                     # Удаляем архив только после скачивания
                     if download_button:
