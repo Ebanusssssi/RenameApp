@@ -55,7 +55,10 @@ def process_zip(input_zip):
         with zipfile.ZipFile(output_zip, 'w') as zip_ref:
             # Проходим по всем переименованным файлам и добавляем их в новый архив
             for file_path in renamed_files:
-                arcname = os.path.relpath(file_path, temp_folder)  # Сохраняем структуру папок
+                # Получаем путь относительно временной папки
+                arcname = os.path.relpath(file_path, temp_folder)
+                
+                # Создаем папку в архиве, если она не существует
                 zip_ref.write(file_path, arcname)
 
         return output_zip
