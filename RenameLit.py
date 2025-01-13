@@ -48,13 +48,15 @@ def process_zip(input_zip):
         # Создаем новый архив для обработанных изображений
         output_zip = os.path.join(temp_folder, 'processed_images.zip')
 
-        # Создаем архив с обработанными изображениями
+        # Создаем архив с обработанными изображениями, исключая лишние папки
         with zipfile.ZipFile(output_zip, 'w') as zip_ref:
             for root, dirs, files in os.walk(temp_folder):
+                # Пропускаем папки, которые начинаются с '__MACOSX' или '._'
+                if any(root.startswith(prefix) for prefix in ['__MACOSX', '._']):
+                    continue
                 for filename in files:
                     file_path = os.path.join(root, filename)
-                    if filename.startswith('__MACOSX') or filename.startswith('._'):
-                        continue
+                    # Добавляем файл в архив, сохраняя относительный путь
                     zip_ref.write(file_path, os.path.relpath(file_path, temp_folder))
 
         return output_zip, temp_folder
